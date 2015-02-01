@@ -11,10 +11,24 @@ import Foundation
 class CalculatorBrain {
     
     //can have functions and computed properties
-    enum Op {
+    //enum implements Printable protocol
+    enum Op: Printable {
         case Operand(Double) //Associate type if Op is Operand
         case UnaryOperation(String, (Double) -> Double) //Function is just regular data type
         case BinaryOperation(String, (Double, Double) -> Double)
+        
+        var description: String {
+            get {
+                switch self {
+                case .Operand(let operand):
+                    return "\(operand)"
+                case .UnaryOperation(let symbol, _):
+                    return symbol
+                case .BinaryOperation(let symbol, _):
+                    return symbol
+                }
+            }
+        }
     }
     
     //operarand or operator, preferred init syntax over Array<Op>()
@@ -23,26 +37,26 @@ class CalculatorBrain {
     
     //called when CalculatorBrain instance created
     init() {
-        knownOps["x"] = Op.BinaryOperation("x", *)
-        knownOps["÷"] = Op.BinaryOperation("÷") { $1 / $0 }
-        knownOps["+"] = Op.BinaryOperation("+", +)
-        knownOps["-"] = Op.BinaryOperation("-") { $1 - $0 }
-        knownOps["√"] = Op.UnaryOperation("√", sqrt)
+        func learnOp(op: Op) {
+            knownOps[op.description] = op
+        }
+        learnOp(Op.BinaryOperation("x", *))
+        learnOp(Op.BinaryOperation("÷") { $1 / $0 })
+        learnOp(Op.BinaryOperation("+", +))
+        learnOp(Op.BinaryOperation("-") { $1 - $0 })
+        learnOp(Op.UnaryOperation("√", sqrt))
     }
     
     //Tuple makes first appearance
-    //Returns result of evaluation and rest of the stack as
+    //Returns result of evaluation and rest of the stack as is
     //we need to continue evaluating
     //Implicit let in front of all
     private func evaluate(ops: [Op]) -> (result: Double?, remainingOps: [Op])
     {
         if !ops.isEmpty {
-            var remainingOps = ops //copy and its mutable since
+            var remainingOps = ops //copy and its mutable
             //Immutable value of type only has mutating numbers named
             //Cannot do removeLast since ops is readonly
-            //When pass args to functions, unless it is instance of class,
-            //arrays and dictionaries are not classes in swift, they are structs (e.g. Double, Int)
-            //Classes inheritance, passed by reference as opposed to structs
             let op = remainingOps.removeLast() //only makes the copy here
             switch op {
             //really is op.Operand
@@ -69,22 +83,20 @@ class CalculatorBrain {
     
     func evaluate() -> Double? {
         //could be variable operands, so copying array helps
-        let (result, _) = evaluate(opStack)
+        let (result, remainder) = evaluate(opStack)
+        println("\(opStack) = \(result) with \(remainder) left over")
         return result
     }
 
-    func pushOperand(operand: Double) {
+    func pushOperand(operand: Double) -> Double? {
         opStack.append(Op.Operand(operand))
+        return evaluate()
     }
-    
-    // Private public in swift
-    // If no word, public inside the program
-    // Only use public keyword if want public outside the framework
-    // Private only private to that object
-    // Only non private things should be what we are committed to support
-    func performOperation(symbol: String) {
+
+    func performOperation(symbol: String) -> Double? {
         if let operation = knownOps[symbol] {
             opStack.append(operation)
         }
+        return evaluate()
     }
 }
