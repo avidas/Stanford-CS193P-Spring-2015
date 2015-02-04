@@ -17,6 +17,8 @@ class ViewController: UIViewController {
     //if it is optional type, the value could be nil
     var userInTheMiddleOfTypingNumber = false
     
+    var brain = CalculatorBrain()
+    
     @IBAction func appendDigit(sender: UIButton) {
         
         //if nil, it will crash, if a button is not titled and sending 
@@ -40,38 +42,14 @@ class ViewController: UIViewController {
         if userInTheMiddleOfTypingNumber {
             enter()
         }
-        switch operation {
-        // closure, no return is needed as swift knows result of expression return something
-        // $x are default arguments
-        // last argument can get outside parenthesis
-        // If only argument get rid of parenthesis
-            case "x": performOperation { $0 * $1 }
-            case "÷": performOperation { $0 / $1 }
-            case "+": performOperation { $0 + $1 }
-            case "-": performOperation { $0 - $1 }
-            // automatically picks the correct performOperation function with one operand
-            case "√": performOperation { sqrt($0) }
-            default: break
+        if let operation = sender.currentTitle {
+            if let result = brain.performOperation(operation) {
+                displayValue = result
+            } else {
+                displayValue = 0
+            }
         }
     }
-    
-    //performOperation is a function that takes operation as parameter
-    //operation is a function that takes two doubles and returns a double
-    func performOperation(operation: (Double, Double) -> Double) {
-        if operandStack.count >= 2 {
-            displayValue = operation(operandStack.removeLast(), operandStack.removeLast())
-        }
-    }
-    
-    //for case square root
-    func performOperation(operation: (Double) -> Double) {
-        if operandStack.count >= 1 {
-            displayValue = operation(operandStack.removeLast())
-        }
-    }
-    
-    //Initialize internal stack for numbers using type inference
-    var operandStack = Array<Double>()
     
     //Computed properties
     var displayValue: Double {
@@ -87,13 +65,12 @@ class ViewController: UIViewController {
     //Buttons can control drag
     @IBAction func enter() {
         userInTheMiddleOfTypingNumber = false
-        
-        operandStack.append(displayValue)
-        //Arrays can be printed as strings this way
-        println("operandStack = \(operandStack)")
-
+        if let result = brain.pushOperand(displayValue) {
+            displayValue = result
+        } else {
+            displayValue = 0
+            
+        }
     }
-    
-    
 }
 
