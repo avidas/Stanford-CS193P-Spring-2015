@@ -8,8 +8,18 @@
 
 import UIKit
 
+//Can only be implemented by a class
+protocol FaceViewDataSource: class {
+    // If data source cannot provide smiliness, have it provide nil
+    func smilinessForFaceView(sender: FaceView) -> Double?
+}
+
+//XCode will draw in storyboard viewer
+@IBDesignable
 class FaceView: UIView {
     
+    //IB create new UI to set all those editable
+    @IBInspectable
     //use property observer to make sure that view gets redrawn
     var lineWidth: CGFloat = 3 { didSet { setNeedsDisplay() } }
     var color: UIColor = UIColor.blueColor() { didSet { setNeedsDisplay() } }
@@ -22,6 +32,10 @@ class FaceView: UIView {
     var faceRadius: CGFloat {
         return min(bounds.size.width, bounds.size.height) / 2 * scale
     }
+    
+    //optional: Might not have a smile, just flatline so allowed nil
+    //weak dataSource wont keep controller in memory
+    weak var dataSource: FaceViewDataSource?
     
     //Constants in swift
     private struct Scaling {
@@ -59,6 +73,14 @@ class FaceView: UIView {
         return path
     }
     
+    func scale(gesture: UIPinchGestureRecognizer) {
+        println("here")
+        if gesture.state == .Changed {
+            scale *= gesture.scale
+            gesture.scale = 1 //
+        }
+    }
+    
     private func bezierPathForSmile(fractionOfMaxSmile: Double) -> UIBezierPath
     {
         let mouthWidth = faceRadius / Scaling.FaceRadiusToMouthWidthRatio
@@ -90,7 +112,9 @@ class FaceView: UIView {
         bezierPathForEye(.Left).stroke()
         bezierPathForEye(.Right).stroke()
         
-        let smiliness = 0.75
+        //swift automatically put ? since can be nil
+        // ?? is default value setting when left side nil
+        let smiliness = dataSource?.smilinessForFaceView(self) ?? 0.0
         let smilePath = bezierPathForSmile(smiliness)
         smilePath.stroke()
     }
